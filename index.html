@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SellerBrain AI – Your Amazon Profit Co-Pilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: 'Inter', system-ui, sans-serif; }
-  </style>
+  <style>body { font-family: 'Inter', system-ui, sans-serif; }</style>
 </head>
 <body class="min-h-screen text-slate-100 bg-[#020617]">
 
@@ -20,7 +18,7 @@
       <p class="text-xl md:text-2xl text-slate-300 mb-10">
         Real-time Seller DNA • AI-powered 72-hour profit plan
       </p>
-      <button onclick="startAmazonLogin()" class="px-12 py-6 text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl shadow-2xl hover:scale-105 transition">
+      <button onclick="startAmazonLogin()" class="px-12 py-6 text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl shadow-2xl hover:scale-105 transition cursor-pointer">
         Continue with Amazon (Free)
       </button>
     </div>
@@ -31,7 +29,7 @@
     <div class="max-w-6xl mx-auto">
       <div class="flex justify-between items-center mb-10">
         <h2 class="text-5xl font-bold">SellerBrain AI – Live</h2>
-        <button onclick="location.reload()" class="px-6 py-3 bg-red-600 rounded-xl">Refresh / Log out</button>
+        <button onclick="location.reload()" class="px-6 py-3 bg-red-600 rounded-xl">Refresh</button>
       </div>
 
       <div class="grid md:grid-cols-3 gap-8 mb-12">
@@ -51,98 +49,69 @@
 
       <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-3xl p-10 border border-blue-700">
         <h3 class="text-3xl font-bold mb-6">Your 72-Hour Profit Plan (AI-generated)</h3>
-        <div id="profitPlan" class="text-xl space-y-4">Loading your data…</div>
+        <div id="profitPlan" class="text-xl space-y-4">Loading…</div>
       </div>
     </div>
   </div>
 
 <script>
-// ==================== YOUR KEYS (NEVER CHANGE AGAIN) ====================
+// ==================== YOUR KEYS ====================
 const GROQ_API_KEY = "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";
 const AMAZON_CLIENT_ID = "amzn1.application-oa2-client.76e9023eb9de48f4b895d82490b1b3bc";
 const REFRESH_TOKEN = "Atzr|IwEBIK05-L5yJvoXlc-1YN0Y1ZEvw2gmsWRsld9RrEhi4j091tfQ2xqyMgoieutponEcjCYTzjgvwdjNg23xoWYBQZxUTF0f9qXwtTXNBEaMtyl9zKYROCUjGklaA28BU1TSnTV7-fYPGOYe6ZZiVJhDXDCDqJe25diGPN8RlJq_Jfyoe1IqU3I6Yrz3dZSyJXJduWvB9GYxxDY_NqMcbIqQGjudw4CiiNitdpTvh3VuX3f6i7SBr8Qx73pwFAtP6OhVw-XpaJORsq2mc5L_35qProPKDg9qKt1wV4d0kcaJB-KKzXZ88N7k6221dWCSZLcsaf4";
-// =======================================================================
-
-let accessToken = null;
+// ================================================
 
 function startAmazonLogin() {
+  {
   const redirectUri = encodeURIComponent(location.origin + location.pathname);
   const loginUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${AMAZON_CLIENT_ID}&state=state&version=beta&redirect_uri=${redirectUri}`;
   location.href = loginUrl;
-}
-
-async function getAccessToken() {
-  const resp = await fetch("https://api.amazon.com/auth/o2/token", {
-    {
-    method: "POST",
-    headers: { 
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": "SellerBrain-AI/1.0"
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: REFRESH_TOKEN,
-      client_id: AMAZON_CLIENT_ID
-    })
-  });
-  const data = await resp.json();
-  if (data.error) throw new Error(data.error_description);
-  return data.access_token;
 }
 
 async function loadDashboard() {
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
 
-  try {
-    accessToken = await getAccessToken();
+  const resp = await fetch("https://api.amazon.com/auth/o2/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: REFRESH_TOKEN,
+      client_id: AMAZON_CLIENT_ID
+    })
+  });
+  const tokenData = await resp.json();
+  const accessToken = tokenData.access_token;
 
-    const headers = {
-      "x-amz-access-token": accessToken,
-      "User-Agent": "SellerBrain-AI/1.0"
-    };
+  const headers = { "x-amz-access-token": accessToken };
 
-    const [ordersResp, inventoryResp] = await Promise.all([
-      fetch("https://sellingpartnerapi-na.amazon.com/orders/v0/orders?MarketplaceIds=ATVPDKIKX0DER&CreatedAfter=2025-10-01", { headers }),
-      fetch("https://sellingpartnerapi-na.amazon.com/fba.com/fba/inventory/v1/summaries?details=true&granularityType=Summary&marketplaceIds=ATVPDKIKX0DER", { headers })
-    ]);
+  const [orders, inventory] = await Promise.all([
+    fetch("https://sellingpartnerapi-na.amazon.com/orders/v0/orders?MarketplaceIds=ATVPDKIKX0DER&CreatedAfter=2025-10-01", { headers }).then(r => r.json()),
+    fetch("https://sellingpartnerapi-na.amazon.com/fba/inventory/v1/summaries?details=true&granularityType=Summary&marketplaceIds=ATVPDKIKX0DER", { headers }).then(r => r.json())
+  ]);
 
-    const orders = await ordersResp.json();
-    const inventory = await inventoryResp.json();
+  const groqResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "llama-3.1-70b-versatile",
+      messages: [
+        { role: "system", content: "Return ONLY valid JSON: {profit30d:number, pricingPower:0-100, reviewTrust:0-100, plan:[{action:string, impact:string}]}" },
+        { role: "user", content: JSON.stringify({orders, inventory}) }
+      ]
+    })
+  });
+  const groq = await groqResp.json();
+  const result = JSON.parse(groq.choices[0].message.content || "{}");
 
-    const payload = { orders, inventory };
-
-    const groq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-70b-versatile",
-        temperature: 0.3,
-        messages: [
-          { role: "system", content: "You are SellerBrain AI. Return ONLY valid JSON with: profit30d (number), pricingPower (0-100), reviewTrust (0-100), plan (array of {action:string, impact:string})" },
-          { role: "user", content: JSON.stringify(payload) }
-        ]
-      })
-    }).then(r => r.json());
-
-    const result = JSON.parse(groq.choices[0].message.content || "{}");
-
-    document.getElementById('profit').textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result.profit30d || 0);
-    document.getElementById('pricingPower').textContent = result.pricingPower ?? "—";
-    document.getElementById('reviewTrust').textContent = result.reviewTrust ?? "—";
-
-    const html = (result.plan || []).map(p => `<div class="bg-slate-800/60 p-5 rounded-xl">• ${p.action} <span class="text-green-400 font-bold">${p.impact}</span></div>`).join('');
-    document.getElementById('profitPlan').innerHTML = html || "<p class='text-slate-400'>No urgent actions – your account is healthy!</p>";
-
-  } catch (e) {
-    document.getElementById('profitPlan').innerHTML = `<p class="text-red-400">Error: ${e.message}</p>`;
-  }
+  document.getElementById('profit').textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result.profit30d || 0);
+  document.getElementById('pricingPower').textContent = result.pricingPower ?? "—";
+  document.getElementById('reviewTrust').textContent = result.reviewTrust ?? "—";
+  document.getElementById('profitPlan').innerHTML = (result.plan || []).map(p => `<div class="bg-slate-800/60 p-5 rounded-xl">• ${p.action} <span class="text-green-400 font-bold">${p.impact}</span></div>`).join('') || "No actions needed!";
 }
 
-// Auto-load dashboard when page opens (token is hard-coded)
+// Auto-load dashboard on page open
 loadDashboard();
 </script>
 </body>
