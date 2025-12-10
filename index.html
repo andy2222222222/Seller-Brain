@@ -27,11 +27,7 @@
   <!-- DASHBOARD -->
   <div id="dashboard" class="hidden min-h-screen p-8">
     <div class="max-w-6xl mx-auto">
-      <div class="flex justify-between items-center mb-10">
-        <h2 class="text-5xl font-bold">SellerBrain AI – Live</h2>
-        <button onclick="location.reload()" class="px-6 py-3 bg-red-600 rounded-xl">Refresh</button>
-      </div>
-
+      <h2 class="text-5xl font-bold mb-10">SellerBrain AI – Live</h2>
       <div class="grid md:grid-cols-3 gap-8 mb-12">
         <div class="bg-slate-900/90 rounded-3xl p-8 border border-slate-700">
           <p class="text-slate-400 text-lg">30-day Net Profit</p>
@@ -46,7 +42,6 @@
           <p class="text-5xl font-black text-purple-400 mt-2" id="reviewTrust">—</p>
         </div>
       </div>
-
       <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-3xl p-10 border border-blue-700">
         <h3 class="text-3xl font-bold mb-6">Your 72-Hour Profit Plan (AI-generated)</h3>
         <div id="profitPlan" class="text-xl space-y-4">Loading…</div>
@@ -62,17 +57,17 @@ const REFRESH_TOKEN = "Atzr|IwEBIK05-L5yJvoXlc-1YN0Y1ZEvw2gmsWRsld9RrEhi4j091tfQ
 // ================================================
 
 function startAmazonLogin() {
-  {
   const redirectUri = encodeURIComponent(location.origin + location.pathname);
   const loginUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${AMAZON_CLIENT_ID}&state=state&version=beta&redirect_uri=${redirectUri}`;
   location.href = loginUrl;
 }
 
+// Auto-load dashboard (you already authorized once)
 async function loadDashboard() {
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
 
-  const resp = await fetch("https://api.amazon.com/auth/o2/token", {
+  const tokenResp = await fetch("https://api.amazon.com/auth/o2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -81,7 +76,7 @@ async function loadDashboard() {
       client_id: AMAZON_CLIENT_ID
     })
   });
-  const tokenData = await resp.json();
+  const tokenData = await tokenResp.json();
   const accessToken = tokenData.access_token;
 
   const headers = { "x-amz-access-token": accessToken };
@@ -111,7 +106,6 @@ async function loadDashboard() {
   document.getElementById('profitPlan').innerHTML = (result.plan || []).map(p => `<div class="bg-slate-800/60 p-5 rounded-xl">• ${p.action} <span class="text-green-400 font-bold">${p.impact}</span></div>`).join('') || "No actions needed!";
 }
 
-// Auto-load dashboard on page open
 loadDashboard();
 </script>
 </body>
