@@ -5,115 +5,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SellerBrain AI – Your Amazon Profit Co-Pilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <style>
     body { font-family: 'Inter', system-ui, sans-serif; }
-    .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s; }
-    .reveal-visible { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body class="min-h-screen text-slate-100 bg-[#020617]">
 
-  <!-- HERO / LANDING -->
+  <!-- LANDING -->
   <div id="landing" class="min-h-screen flex items-center justify-center px-6">
     <div class="text-center max-w-4xl mx-auto">
       <h1 class="text-5xl md:text-7xl font-black mb-6">
         Your Amazon business<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">deserves a brain.</span>
       </h1>
       <p class="text-xl md:text-2xl text-slate-300 mb-10">
-        Real-time Seller DNA • AI-powered 72-hour profit plan • Works with your real Seller Central data
+        Real-time Seller DNA • AI-powered 72-hour profit plan
       </p>
-      <button 
-        onclick="startAmazonLogin()"
-        class="px-10 py-5 text-xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl shadow-2xl hover:scale-105 transition">
-        Continue with Amazon → (Free)
+      <button onclick="startAmazonLogin()" class="px-12 py-6 text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl shadow-2xl hover:scale-105 transition">
+        Continue with Amazon (Free)
       </button>
-      <p class="mt-6 text-sm text-slate-400">No credit card • Official SP-API • 30-second setup</p>
+      <p class="mt-6 text-slate-400">No credit card • Official SP-API</p>
     </div>
   </div>
 
-  <!-- DASHBOARD (hidden until logged in) -->
-  <div id="dashboard" class="hidden min-h-screen p-6">
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden min-h-screen p-8">
     <div class="max-w-6xl mx-auto">
-      <div class="flex justify-between items-center mb-8">
-        <h2 class="text-4xl font-bold">SellerBrain AI – Live Dashboard</h2>
-        <button onclick="logout()" class="px-4 py-2 bg-red-600 rounded-lg">Log out</button>
+      <div class="flex justify-between items-center mb-10">
+        <h2 class="text-5xl font-bold">SellerBrain AI – Live</h2>
+        <button onclick="logout()" class="px-6 py-3 bg-red-600 rounded-xl">Log out</button>
       </div>
 
-      <div class="grid md:grid-cols-3 gap-6 mb-10">
-        <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
-          <p class="text-slate-400">30-day Net Profit</p>
-          <p class="text-4xl font-black text-green-400" id="profit">$--,---</p>
+      <div class="grid md:grid-cols-3 gap-8 mb-12">
+        <div class="bg-slate-900/90 rounded-3xl p-8 border border-slate-700">
+          <p class="text-slate-400 text-lg">30-day Net Profit</p>
+          <p class="text-5xl font-black text-green-400 mt-2" id="profit">$0</p>
         </div>
-        <div class="bg-slate-900/80 rounded-2xl p- p-6 border border-slate-700">
-          <p class="text-slate-400">Pricing Power Score</p>
-          <p class="text-4xl font-black text-blue-400" id="pricingPower">--/100</p>
+        <div class="bg-slate-900/90 rounded-3xl p-8 border border-slate-700">
+          <p class="text-slate-400 text-lg">Pricing Power Score</p>
+          <p class="text-5xl font-black text-blue-400 mt-2" id="pricingPower">—</p>
         </div>
-        <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
-          <p class="text-slate-400">Review Trust Score</p>
-          <p class="text-4xl font-black text-purple-400" id="reviewTrust">--/100</p>
+        <div class="bg-slate-900/90 rounded-3xl p-8 border border-slate-700">
+          <p class="text-slate-400 text-lg">Review Trust Score</p>
+          <p class="text-5xl font-black text-purple-400 mt-2" id="reviewTrust">—</p>
         </div>
       </div>
 
-      <div class="bg-gradient-to-r from-blue-900/40 to-purple-900/40 rounded-2xl p-8 border border-blue-700">
-        <h3 class="text-2xl font-bold mb-4">Your 72-Hour Profit Plan (AI-generated)</h3>
-        <div id="profitPlan" class="text-lg space-y-3">
-          <p class="text-slate-300">Analyzing your account…</p>
+      <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-3xl p-10 border border-blue-700">
+        <h3 class="text-3xl font-bold mb-6">Your 72-Hour Profit Plan (AI-generated)</h3>
+        <div id="profitPlan" class="text-xl space-y-4">
+          Loading your data…
         </div>
       </div>
     </div>
   </div>
 
 <script>
-// ================ CONFIG – YOU ONLY CHANGE THESE 2 LINES ================
-const GROQ_API_KEY = "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"; // ← get free at https://console.groq.com/keys
-const AMAZON_CLIENT_ID = "amzn1.application-oa2-client.76e9023eb9de48f4b895d82490b1b3bc"; // ← we’ll get this in 2 min
-// ==========================================================================
+// ============ YOUR KEYS – NEVER CHANGE AGAIN ============
+const GROQ_API_KEY = "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";
+const AMAZON_CLIENT_ID = "amzn1.application-oa2-client.76e9023eb9de48f4b895d82490b1b3bc";
+const REFRESH_TOKEN = "Atzr|IwEBIK05-L5yJvoXlc-1YN0Y1ZEvw2gmsWRsld9RrEhi4j091tfQ2xqyMgoieutponEcjCYTzjgvwdjNg23xoWYBQZxUTF0f9qXwtTXNBEaMtyl9zKYROCUjGklaA28BU1TSnTV7-fYPGOYe6ZZiVJhDXDCDqJe25diGPN8RlJq_Jfyoe1IqU3I6Yrz3dZSyJXJduWvB9GYxxDY_NqMcbIqQGjudw4CiiNitdpTvh3VuX3f6i7SBr8Qx73pwFAtP6OhVw-XpaJORsq2mc5L_35qProPKDg9qKt1wV4d0kcaJB-KKzXZ88N7k6221dWCSZLcsaf4";
+// ========================================================
 
 let accessToken = null;
 
 function startAmazonLogin() {
-  const redirectUri = encodeURIComponent(location.origin);
+  const redirectUri = encodeURIComponent(location.origin + location.pathname);
   const loginUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${AMAZON_CLIENT_ID}&state=state&version=beta&redirect_uri=${redirectUri}`;
   location.href = loginUrl;
 }
 
-// Check for tokens on load
-window.addEventListener('load', () => {
-  const params = new URLSearchParams(location.search);
-  const code = params.get('code');
-  if (code) {
-    document.getElementById('landing').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    exchangeCodeForToken(code);
-  }
-});
-
-async function exchangeCodeForToken(code) {
-  // In a real single-file v1 we use a tiny proxy (I’ll give you one for free)
-  // For now, just paste your refresh token here once:
-  const REFRESH_TOKEN = prompt("Atzr|IwEBIK05-L5yJvoXlc-1YN0Y1ZEvw2gmsWRsld9RrEhi4j091tfQ2xqyMgoieutponEcjCYTzjgvwdjNg23xoWYBQZxUTF0f9qXwtTXNBEaMtyl9zKYROCUjGklaA28BU1TSnTV7-fYPGOYe6ZZiVJhDXDCDqJe25diGPN8RlJq_Jfyoe1IqU3I6Yrz3dZSyJXJduWvB9GYxxDY_NqMcbIqQGjudw4CiiNitdpTvh3VuX3f6i7SBr8Qx73pwFAtP6OhVw-XpaJORsq2mc5L_35qProPKDg9qKt1wV4d0kcaJB-KKzXZ88N7k6221dWCSZLcsaf4");
-  if (!REFRESH_TOKEN) return alert("No token → no data");
-
-  await loadDashboard(REFRESH_TOKEN);
-}
-
-async function loadDashboard(refreshToken) {
-  // 1. Get access token
-  const tokenResponse = await fetch("https://api.amazon.com/auth/o2/token", {
+async function getAccessToken() {
+  const resp = await fetch("https://api.amazon.com/auth/o2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "refresh_token",
-      refresh_token: refreshToken,
-      client_id: AMAZON_CLIENT_ID,
-      client_secret: "", // left empty for self-auth apps
-    }))
-  }).then(r => r.json());
+      refresh_token: REFRESH_TOKEN,
+      client_id: AMAZON_CLIENT_ID
+    })
+  });
+  const data = await resp.json();
+  return data.access_token;
+}
 
-  accessToken = tokenResponse.access_token;
+async function loadDashboard() {
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
 
-  // 2. Pull real data (last 30 days)
+  accessToken = await getAccessToken();
+
   const orders = await fetch("https://sellingpartnerapi-na.amazon.com/orders/v0/orders?MarketplaceIds=ATVPDKIKX0DER&CreatedAfter=2025-01-01", {
     headers: { "x-amz-access-token": accessToken }
   }).then(r => r.json());
@@ -122,10 +102,9 @@ async function loadDashboard(refreshToken) {
     headers: { "x-amz-access-token": accessToken }
   }).then(r => r.json());
 
-  const data = { orders, inventory };
+  const payload = { orders, inventory };
 
-  // 3. Send to Groq for Seller DNA
-  const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const groq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${GROQ_API_KEY}`,
@@ -134,36 +113,31 @@ async function loadDashboard(refreshToken) {
     body: JSON.stringify({
       model: "llama-3.1-70b-versatile",
       temperature: 0.3,
-      messages: [{
-        role: "system",
-        content: "You are SellerBrain AI. Analyze the Amazon data and return ONLY valid JSON with: profit30d, pricingPower (0-100), reviewTrust (0-100), plan (array of {action:string, impact:string})"
-      }, {
-        role: "user",
-        content: JSON.stringify(data)
-      }]
+      messages: [
+        { role: "system", content: "You are SellerBrain AI. Return ONLY valid JSON with keys: profit30d (number), pricingPower (0-100), reviewTrust (0-100), plan (array of {action:string, impact:string})" },
+        { role: "user", content: JSON.stringify(payload) }
+      ]
     })
   }).then(r => r.json());
 
-  const result = JSON.parse(groqResponse.choices[0].message.content);
+  const result = JSON.parse(groq.choices[0].message.content);
 
-  // 4. Show on dashboard
   document.getElementById('profit').textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result.profit30d || 0);
-  document.getElementById('pricingPower').textContent = result.pricingPower || 0;
-  document.getElementById('reviewTrust').textContent = result.reviewTrust || 0;
+  document.getElementById('pricingPower').textContent = result.pricingPower ?? "—";
+  document.getElementById('reviewTrust').textContent = result.reviewTrust ?? "—";
 
-  const planHtml = result.plan.map(p => `<div class="bg-slate-800/60 p-4 rounded-lg">→ ${p.action}<span class="text-green-400 font-bold ml-3">${p.impact}</span></div>`).join('');
-  document.getElementById('profitPlan').innerHTML = planHtml || '<p class="text-slate-400">No actions needed right now – great job!</p>';
+  const html = (result.plan || []).map(p => `<div class="bg-slate-800/60 p-5 rounded-xl">• ${p.action} <span class="text-green-400 font-bold">${p.impact}</span></div>`).join('');
+  document.getElementById('profitPlan').innerHTML = html || "<p class='text-slate-400'>No urgent actions – your account is healthy!</p>";
 }
 
 function logout() {
-  location.href = location.origin;
+  location.reload();
 }
-</script>
 
-<!-- Reveal animation -->
-<script>
-  const observer = new IntersectionObserver(e => e.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('reveal-visible') }));
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+// Auto-load if we have a token
+if (REFRESH_TOKEN && REFRESH_TOKEN.length > 50) {
+  loadDashboard();
+}
 </script>
 </body>
 </html>
