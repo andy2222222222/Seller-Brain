@@ -66,8 +66,8 @@
 
 <script>
 // ================ CONFIG – YOU ONLY CHANGE THESE 2 LINES ================
-const GROQ_API_KEY = "gsk_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"; // ← get free at https://console.groq.com/keys
-const AMAZON_CLIENT_ID = "amzn1.application-oa2-client.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // ← we’ll get this in 2 min
+const GROQ_API_KEY = "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"; // ← get free at https://console.groq.com/keys
+const AMAZON_CLIENT_ID = "amzn1.pa.o.A2FM3JFM2YM7GR"; // ← we’ll get this in 2 min
 // ==========================================================================
 
 let accessToken = null;
@@ -92,7 +92,7 @@ window.addEventListener('load', () => {
 async function exchangeCodeForToken(code) {
   // In a real single-file v1 we use a tiny proxy (I’ll give you one for free)
   // For now, just paste your refresh token here once:
-  const REFRESH_TOKEN = prompt("Paste your Amazon refresh token here (one-time):");
+  const REFRESH_TOKEN = prompt("Atzr|IwEBIK05-L5yJvoXlc-1YN0Y1ZEvw2gmsWRsld9RrEhi4j091tfQ2xqyMgoieutponEcjCYTzjgvwdjNg23xoWYBQZxUTF0f9qXwtTXNBEaMtyl9zKYROCUjGklaA28BU1TSnTV7-fYPGOYe6ZZiVJhDXDCDqJe25diGPN8RlJq_Jfyoe1IqU3I6Yrz3dZSyJXJduWvB9GYxxDY_NqMcbIqQGjudw4CiiNitdpTvh3VuX3f6i7SBr8Qx73pwFAtP6OhVw-XpaJORsq2mc5L_35qProPKDg9qKt1wV4d0kcaJB-KKzXZ88N7k6221dWCSZLcsaf4");
   if (!REFRESH_TOKEN) return alert("No token → no data");
 
   await loadDashboard(REFRESH_TOKEN);
