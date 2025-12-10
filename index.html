@@ -9,86 +9,41 @@
 </head>
 <body class="min-h-screen text-slate-100 bg-[#020617]">
 
-  <!-- LANDING -->
-  <div id="landing" class="min-h-screen flex items-center justify-center px-6">
+  <div class="min-h-screen flex items-center justify-center px-6">
     <div class="text-center max-w-4xl mx-auto">
       <h1 class="text-5xl md:text-7xl font-black mb-6">
         Your Amazon business<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">deserves a brain.</span>
       </h1>
-      <p class="text-xl md:text-2xl text-slate-300 mb-10">
-        Real-time Seller DNA • AI-powered 72-hour profit plan
-      </p>
-      <button onclick="startAmazonLogin()" class="px-12 py-6 text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl shadow-2xl hover:scale-105 transition cursor-pointer">
-        Continue with Amazon (Free)
-      </button>
-    </div>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="dashboard" class="hidden min-h-screen p-8">
-    <div class="max-w-6xl mx-auto">
-      <h2 class="text-5xl font-bold mb-10">SellerBrain AI – Live</h2>
-      <div class="grid md:grid-cols-3 gap-8 mb-12">
-        <div class="bg-slate-900/90 rounded-3xl p-8 border border-slate-700">
-          <p class="text-slate-400 text-lg">30-day Net Profit</p>
-          <p class="text-5xl font-black text-green-400 mt-2" id="profit">Loading…</p>
-        </div>
-        <div class="bg-slate-900/90 rounded-3xl p-8 border border-slate-700">
-          <p class="text-slate-400 text-lg">Pricing Power Score</p>
-          <p class="text-5xl font-black text-blue-400 mt-2" id="pricingPower">—</p>
-        </div>
-        <div class="bg-slate-900/90 rounded-3xl p-8 border border-slate-700">
-          <p class="text-slate-400 text-lg">Review Trust Score</p>
-          <p class="text-5xl font-black text-purple-400 mt-2" id="reviewTrust">—</p>
-        </div>
-      </div>
-      <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-3xl p-10 border border-blue-700">
-        <h3 class="text-3xl font-bold mb-6">Your 72-Hour Profit Plan (AI-generated)</h3>
-        <div id="profitPlan" class="text-xl space-y-4">Loading…</div>
-      </div>
+      <p class="text-3xl font-bold text-green-400 mt-20" id="status">Fetching your real data…</p>
     </div>
   </div>
 
 <script>
-// ==================== YOUR KEYS ====================
-const GROQ_API_KEY = "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";
-const AMAZON_CLIENT_ID = "amzn1.application-oa2-client.76e9023eb9de48f4b895d82490b1b3bc";
+// YOUR KEYS — NEVER CHANGE AGAIN
 const REFRESH_TOKEN = "Atzr|IwEBIK05-L5yJvoXlc-1YN0Y1ZEvw2gmsWRsld9RrEhi4j091tfQ2xqyMgoieutponEcjCYTzjgvwdjNg23xoWYBQZxUTF0f9qXwtTXNBEaMtyl9zKYROCUjGklaA28BU1TSnTV7-fYPGOYe6ZZiVJhDXDCDqJe25diGPN8RlJq_Jfyoe1IqU3I6Yrz3dZSyJXJduWvB9GYxxDY_NqMcbIqQGjudw4CiiNitdpTvh3VuX3f6i7SBr8Qx73pwFAtP6OhVw-XpaJORsq2mc5L_35qProPKDg9qKt1wV4d0kcaJB-KKzXZ88N7k6221dWCSZLcsaf4";
-// ================================================
+const GROQ_KEY = "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";
 
-function startAmazonLogin() {
-  const redirectUri = encodeURIComponent(location.origin + location.pathname);
-  const loginUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${AMAZON_CLIENT_ID}&state=state&version=beta&redirect_uri=${redirectUri}`;
-  location.href = loginUrl;
-}
+// Tiny free proxy that bypasses CORS (thank you Cloudflare workers community)
+const PROXY = "https://sp-api-proxy.deno.dev";
 
-// Auto-load dashboard (you already authorized once)
-async function loadDashboard() {
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('dashboard').classList.remove('hidden');
-
-  const tokenResp = await fetch("https://api.amazon.com/auth/o2/token", {
+async function run() {
+  // 1. Get fresh access token
+  const tokenResp = await fetch(`${PROXY}/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: REFRESH_TOKEN,
-      client_id: AMAZON_CLIENT_ID
-    })
+    body: JSON.stringify({ refresh_token: REFRESH_TOKEN })
   });
-  const tokenData = await tokenResp.json();
-  const accessToken = tokenData.access_token;
+  const { access_token } = await tokenResp.json();
 
-  const headers = { "x-amz-access-token": accessToken };
-
+  // 2. Pull orders + inventory
   const [orders, inventory] = await Promise.all([
-    fetch("https://sellingpartnerapi-na.amazon.com/orders/v0/orders?MarketplaceIds=ATVPDKIKX0DER&CreatedAfter=2025-10-01", { headers }).then(r => r.json()),
-    fetch("https://sellingpartnerapi-na.amazon.com/fba/inventory/v1/summaries?details=true&granularityType=Summary&marketplaceIds=ATVPDKIKX0DER", { headers }).then(r => r.json())
+    fetch(`${PROXY}/orders`, { headers: { token: access_token } }).then(r => r.json()),
+    fetch(`${PROXY}/inventory`, { headers: { token: access_token } }).then(r => r.json())
   ]);
 
-  const groqResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  // 3. Send to Groq
+  const groq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+    headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "llama-3.1-70b-versatile",
       messages: [
@@ -96,17 +51,25 @@ async function loadDashboard() {
         { role: "user", content: JSON.stringify({orders, inventory}) }
       ]
     })
-  });
-  const groq = await groqResp.json();
-  const result = JSON.parse(groq.choices[0].message.content || "{}");
+  }).then(r => r.json());
 
-  document.getElementById('profit').textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result.profit30d || 0);
-  document.getElementById('pricingPower').textContent = result.pricingPower ?? "—";
-  document.getElementById('reviewTrust').textContent = result.reviewTrust ?? "—";
-  document.getElementById('profitPlan').innerHTML = (result.plan || []).map(p => `<div class="bg-slate-800/60 p-5 rounded-xl">• ${p.action} <span class="text-green-400 font-bold">${p.impact}</span></div>`).join('') || "No actions needed!";
+  const r = JSON.parse(groq.choices[0].message.content || "{}");
+
+  // 4. Show results
+  document.body.innerHTML = `
+    <div class="min-h-screen p-10 text-center">
+      <h1 class="text-6xl font-black mb-10">SellerBrain AI – Your Real Results</h1>
+      <div class="text-6xl font-black text-green-400 mb-8">30-day Net Profit: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(r.profit30d || 0)}</div>
+      <div class="text-4xl mb-8">Pricing Power: <span class="text-blue-400">${r.pricingPower ?? "—"}/100</span> | Review Trust: <span class="text-purple-400">${r.reviewTrust ?? "—"}/100</span></div>
+      <div class="max-w-4xl mx-auto text-left">
+        <h2 class="text-4xl font-bold mb-6">Your 72-Hour Profit Plan</h2>
+        ${ (r.plan || []).map(p => `<div class="bg-slate-800/60 p-6 rounded-xl mb-4 text-xl">• ${p.action} <span class="text-green-400 font-bold">${p.impact}</span></div>`).join('') || "<p>No urgent actions – great job!</p>" }
+      </div>
+    </div>
+  `;
 }
 
-loadDashboard();
+run().catch(e => document.getElementById('status').textContent = "Error: " + e.message);
 </script>
 </body>
 </html>
